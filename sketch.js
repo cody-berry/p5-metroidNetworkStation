@@ -48,6 +48,25 @@ let jumpMillis = 15000;
 let voiceStartMillis = 0
 
 
+
+const detail = 32
+
+// globe is going to be a two-D array...
+let globe = Array(detail+1)
+
+// ...so let's fill it!
+for (let i = 0; i < globe.length; i++) {
+    globe[i] = Array(detail+1)
+}
+// what is our angle for our Adam?
+let angle = 0
+
+// what is our amplitude?
+let p5amp
+let voice
+let lastVoiceAmp = 0
+
+
 function preload() {
     font = loadFont('data/giga.ttf')
     passages = loadJSON("passages.json")
@@ -93,6 +112,13 @@ function setup() {
     // console.log(textFrame)
     dialogBox = new DialogBox(textList, highlightList, msTimestamps, textFrame, 24)
     // console.log(textFrame)
+
+    // define amplitude
+    p5amp = new p5.Amplitude()
+
+    // now we rotate the camera to make sure we're in the correct place for Adam
+    cam.rotateX(-PI/2)
+
 }
 
 
