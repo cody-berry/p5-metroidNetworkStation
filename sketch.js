@@ -66,9 +66,12 @@ let p5amp
 let voice
 let lastVoiceAmp = 0
 
+let fontTwo
+
 
 function preload() {
     font = loadFont('data/giga.ttf')
+    fontTwo = loadFont('data/meiryo.ttf')
     passages = loadJSON("passages.json")
     artaria = loadSound("data/artaria.mp3")
     textFrame = loadImage("data/textFrame.png")
@@ -78,7 +81,10 @@ function preload() {
 let textList = []
 /* grab other information: ms spent on each passage, highlights */
 let highlightList = [] // a list of tuples specifying highlights and indexes
-let msTimestamps = [] // how long to wait before advancing a passage
+let msEndTimestamps = [] // the time since the soundtrack started of the
+// end of all the passages
+let msStartTimestamps = [] // the time since the soundtrack started of the
+// start of all the passages
 let textFrame // our text frame
 let cam // our camera
 
@@ -87,7 +93,7 @@ function setup() {
     createCanvas(1280, 720, WEBGL)
     cam = new Dw.EasyCam(this._renderer, {distance: 240});
     colorMode(HSB, 360, 100, 100, 100)
-    textFont(font, 20)
+    textFont(fontTwo, 20)
 
     for (let p in passages) {
         textList.push(passages[p]["text"])
@@ -101,7 +107,8 @@ function setup() {
             list.push([highlight["start"], highlight["end"]])
         }
         highlightList.push(list)
-        msTimestamps.push(passages[p]["ms"])
+        msEndTimestamps.push(passages[p]["speechEndTime"])
+        msEndTimestamps.push(passages[p]["speechStartTime"])
         // console.log(msPerPassage)
     }
 
@@ -110,28 +117,29 @@ function setup() {
     // console.log(textList)
     // textFrame.resize(640, 360)
     // console.log(textFrame)
-    dialogBox = new DialogBox(textList, highlightList, msTimestamps, textFrame, 24)
+    dialogBox = new DialogBox(textList, highlightList, msStartTimestamps, msEndTimestamps, textFrame, 24)
     // console.log(textFrame)
 
     // define amplitude
-    p5amp = new p5.Amplitude()
+    p5amp = new p5.Amplitude(0)
 
     // now we rotate the camera to make sure we're in the correct place for Adam
     cam.rotateX(-PI/2)
+
+    // let's setup our globe
+    setupGlobe()
 }
 
 
 function draw() {
     background(234, 34, 24)
     drawBlenderAxis()
-    // dialogBox.renderTextFrame(cam)
 
     // let's light up the room!
     ambientLight(250)
     directionalLight(0, 0, 10, .5, 1, 0)
 
     // display Adam
-    setupGlobe()
     displayGlobe()
 
     angle -= 1/10
@@ -141,14 +149,13 @@ function draw() {
     // we should only render our text our update if we're playing. This is
     // partially why we created the playing variable anyway.
     if (playing) {
-
         // how long has Adam given speech for?
-        // it is depending on the time, so millis(). But he only starts
-        // talking after the soundtrack starts and msTimestamps[0] is
-        // exceeded, so -voiceStartMillis-msTimestamps[0]. We skip
-        // jumpMillis ahead, but it is not included in msTimestamps[0], so
+        // it depends on the time, so millis(). But he only starts
+        // talking after the soundtrack starts and msStartTimestamps[0] is
+        // exceeded, so -voiceStartMillis-msStartTimestamps[0]. We skip
+        // jumpMillis ahead, but it is not included in msStartTimestamps[0], so
         // +jumpMillis.
-        let howLongPlayingFor = millis() - voiceStartMillis + jumpMillis - msTimestamps[0]
+        let howLongPlayingFor = millis() - voiceStartMillis + jumpMillis - msStartTimestamps[0]
 
         // and if that is greater than 0, we can show our text
         if (howLongPlayingFor > 0) {
@@ -167,12 +174,27 @@ function draw() {
             dialogBox.update()
             dialogBox.renderEquilateralTriangle(20, cam)
         }
-        dialogBox.advance(howLongPlayingFor + msTimestamps[0])
+        dialogBox.advance(howLongPlayingFor + msStartTimestamps[0])
 
         // map the milliseconds since it has started from 0 to 250 to a scale
         // for dialogBox.
+        cam.beginHUD(p5._renderer, width, height)
+        debugCorner()
+        cam.endHUD()
     }
     // console.log(textFrame)
+    dialogBox.renderTextFrame(cam)
+}
+
+
+// let's draw our debug corner!
+function debugCorner() {
+    let lineHeight = textAscent() + textDescent()
+    fill(0, 0, 100)
+    noStroke()
+    text(`speechStarted: ${dialogBox.speechStarted()}`, 0, height)
+    text(`speechEnded: ${dialogBox.speechEnded()}`, 0, height - lineHeight)
+    text(`milliseconds: ${millis() - voiceStartMillis + jumpMillis - msStartTimestamps[0]}`, 0, height-2*lineHeight)
 }
 
 
@@ -284,7 +306,6 @@ function drawTorus() {
 
 
 function displayGlobe() {
-    console.log(p5amp.getLevel())
 
     let v1, v2, v3, v4
     fill(0, 0, 100)
@@ -345,6 +366,7 @@ function displayGlobe() {
             if (distance >= max_r/100) {
                 psf = 100
             } else {
+                let howLongPlayingFor = millis() - voiceStartMillis - msStartTimestamps[0]
                 // what is our amplitude?
                 let amp = map(distance, 0, max_r/100, 10, 5)
                 // currentVoiceAmp = constrain(currentVoiceAmp, 0, 30)
@@ -353,26 +375,24 @@ function displayGlobe() {
                 // the inner-most face that isn't moving.
                 // let's try setting the voice amplitude!
 
-                let radius = map(amp, 5, 10, 100, 95) - currentVoiceAmp
+                let radius = map(amp, 5, 10, 100, 95)
+
+                if (dialogBox.speechStarted(howLongPlayingFor) && !dialogBox.speechEnded(howLongPlayingFor)) {
+                    radius -= currentVoiceAmp
+                }
                 psf = radius + amp * sin(2/5*angle) + amp/2
                 psf = constrain(psf, 20, 100+amp)
                 psf = map(psf, 20, 100, 50, 100)
                 // psf = radius
 
-                console.log(psf)
+
                 // we need to draw the base triangles
                 fill(c)
                 beginShape()
                 vertex(v1.x * psf, v1.y * psf, v1.z * psf)
                 vertex(0, 0, 0)
                 vertex(v2.x * psf, v2.y * psf, v2.z * psf)
-                endShape(CLOSE)
-                beginShape()
-                vertex(v2.x * psf, v2.y * psf, v2.z * psf)
                 vertex(0, 0, 0)
-                vertex(v3.x * psf, v3.y * psf, v3.z * psf)
-                endShape(CLOSE)
-                beginShape()
                 vertex(v3.x * psf, v3.y * psf, v3.z * psf)
                 vertex(0, 0, 0)
                 vertex(v4.x * psf, v4.y * psf, v4.z * psf)
@@ -400,7 +420,7 @@ function displayGlobe() {
     fill(180, 100, 100)
     rotateX(PI/2)
     circle(0, 0, 200)
-    // but also one that's a little bit upward
+    // but also one that's a bit upward
     fill(200, 100, 20)
     strokeWeight(0.1)
     translate(0, 0, 1)

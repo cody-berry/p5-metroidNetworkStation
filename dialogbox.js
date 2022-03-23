@@ -1,12 +1,13 @@
 class DialogBox {
-    constructor(passages, highlightIndices, msTimestamps, textFrame, fontSize) {
+    constructor(passages, highlightIndices, msStartTimestamps, msEndTimestamps, textFrame, fontSize) {
 
         // let's assign the passages we have, the highlight indices given in
         // a list of tuples, and the milliseconds per passage!
         colorMode(HSB, 360, 100, 100, 100)
         this.passages = passages
         this.highlightIndices = highlightIndices
-        this.msTimestamps = msTimestamps
+        this.msStartTimestamps = msStartTimestamps
+        this.msEndTimestamps = msEndTimestamps
 
         // our margins for textFrame animation
         this.sideMargin = 90
@@ -21,7 +22,7 @@ class DialogBox {
         this.textFrame = textFrame
 
         // our current passage index
-        this.currentIndex = 0
+        this.passageIndex = 0
 
         // our current character index
         this.characterIndex = 0
@@ -36,12 +37,28 @@ class DialogBox {
 
     // advances our passage if necessary given a time
     advance(time) {
-        if (this.currentIndex + 1 < this.msTimestamps.length) {
-            if (time > this.msTimestamps[this.currentIndex + 1]) {
+        if (this.passageIndex + 1 < this.msStartTimestamps.length) {
+            if (time > this.msStartTimestamps[this.passageIndex + 1]) {
                 this.nextPassage()
             }
         }
     }
+
+
+    // given a time since msStartTimestamps[0], calculates if the current
+    // speech has started
+    speechStarted(time) {
+        return (time + this.msStartTimestamps[0]) > this.msStartTimestamps[this.passageIndex]
+    }
+
+
+    // the whole point of the last function was to help find if Adam was
+    // giving speech. Why don't we have another function with the same
+    // parameter to calculate if the speech has ended?
+    speechEnded(time) {
+        return (time + this.msStartTimestamps[0]) > this.msEndTimestamps[this.passageIndex]
+    }
+
 
     // given our text frame, margins of it, and percentage of progress, we can
     // change this.textFrame with a cache of our original text frame.
@@ -133,12 +150,14 @@ class DialogBox {
         cam.endHUD()
     }
 
+
+
     // renders the text in our dialog box
     renderText(font, cam) {
         cam.beginHUD(p5._renderer, width, height)
 
         // our current passage
-        let currentPassage = this.passages[this.currentIndex]
+        let currentPassage = this.passages[this.passageIndex]
 
         // our margins
         let leftMargin = this.sideMargin + 40
@@ -160,7 +179,7 @@ class DialogBox {
 
             // now we're checking if we should start highlighting or not, so
             // if i is the starting index of one of the tuples...
-            for (let highlight of this.highlightIndices[this.currentIndex]) {
+            for (let highlight of this.highlightIndices[this.passageIndex]) {
                 if (i === highlight[0] - 1) {
 
                     // ...we fill with yellow...
@@ -231,7 +250,7 @@ class DialogBox {
 
         // our equilateral triangle should only show up if we're full of
         // characters.
-        if (this.characterIndex >= this.passages[this.currentIndex].length) {
+        if (this.characterIndex >= this.passages[this.passageIndex].length) {
             cam.beginHUD()
             push()
             translate(width-this.sideMargin-50, height-this.bottomMargin-40)
@@ -250,7 +269,7 @@ class DialogBox {
 
         // if our characters aren't already done skipping, we should
         // increment our character index
-        let currentPassage = this.passages[this.currentIndex]
+        let currentPassage = this.passages[this.passageIndex]
         if (this.characterIndex < currentPassage.length) {
 
             // the reciprocal of this increase number is actually the number
@@ -267,7 +286,7 @@ class DialogBox {
 
     // advance by a passage
     nextPassage() {
-        this.currentIndex++
+        this.passageIndex++
 
         // now this is deprecated, since each value in msPerPassage is
         // the time from the start
