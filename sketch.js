@@ -93,7 +93,6 @@ function setup() {
     createCanvas(1280, 720, WEBGL)
     cam = new Dw.EasyCam(this._renderer, {distance: 240});
     colorMode(HSB, 360, 100, 100, 100)
-    textFont(fontTwo, 20)
 
     for (let p in passages) {
         textList.push(passages[p]["text"])
@@ -108,7 +107,7 @@ function setup() {
         }
         highlightList.push(list)
         msEndTimestamps.push(passages[p]["speechEndTime"])
-        msEndTimestamps.push(passages[p]["speechStartTime"])
+        msStartTimestamps.push(passages[p]["speechStartTime"])
         // console.log(msPerPassage)
     }
 
@@ -132,6 +131,7 @@ function setup() {
 
 
 function draw() {
+    textFont(font, 20)
     background(234, 34, 24)
     drawBlenderAxis()
 
@@ -178,12 +178,11 @@ function draw() {
 
         // map the milliseconds since it has started from 0 to 250 to a scale
         // for dialogBox.
+        textFont(fontTwo, 20)
         cam.beginHUD(p5._renderer, width, height)
         debugCorner()
         cam.endHUD()
     }
-    // console.log(textFrame)
-    dialogBox.renderTextFrame(cam)
 }
 
 
