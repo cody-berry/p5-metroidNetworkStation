@@ -18,6 +18,10 @@ version comments
     **    SQUIRREL!!!
 */
 
+// are we looping in draw or not?
+let looping = true
+
+// our normal things
 let font
 let passages // our json file input
 let dialogBox // our dialog box
@@ -191,9 +195,10 @@ function debugCorner() {
     let lineHeight = textAscent() + textDescent()
     fill(0, 0, 100)
     noStroke()
-    text(`speechStarted: ${dialogBox.speechStarted()}`, 0, height)
-    text(`speechEnded: ${dialogBox.speechEnded()}`, 0, height - lineHeight)
-    text(`milliseconds: ${millis() - voiceStartMillis + jumpMillis - msStartTimestamps[0]}`, 0, height-2*lineHeight)
+    text(`speechStarted: ${dialogBox.speechStarted(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2)}`, 0, height)
+    text(`speechEnded: ${dialogBox.speechEnded(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2)}`, 0, height - lineHeight)
+    text(`milliseconds: ${millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]}`, 0, height-2*lineHeight)
+    text(`Adam speaking?: ${dialogBox.speechStarted(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2) && !dialogBox.speechEnded(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2)}`, 0, height - 3*lineHeight)
 }
 
 
@@ -207,8 +212,13 @@ function keyPressed() {
     }
 
     if (key === 'z') {
-        noLoop()
-        artaria.stop()
+        looping = !looping
+        if (looping) {
+            noLoop()
+            artaria.stop()
+        } else {
+            loop()
+        }
     }
 }
 
@@ -365,7 +375,10 @@ function displayGlobe() {
             if (distance >= max_r/100) {
                 psf = 100
             } else {
-                let howLongPlayingFor = millis() - voiceStartMillis - msStartTimestamps[0]
+                // Somehow, it still doesn't contain jumpMillis or
+                // msStartTimestamps[0] if we do them once. So we actually
+                // need to do them twice.
+                let howLongPlayingFor = millis() - voiceStartMillis - msStartTimestamps[0]*2 + 2*jumpMillis
                 // what is our amplitude?
                 let amp = map(distance, 0, max_r/100, 10, 5)
                 // currentVoiceAmp = constrain(currentVoiceAmp, 0, 30)
