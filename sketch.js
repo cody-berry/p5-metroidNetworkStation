@@ -144,6 +144,7 @@ function draw() {
     directionalLight(0, 0, 10, .5, 1, 0)
 
     // display Adam
+    drawOuterToruses()
     displayGlobe()
 
     angle -= 1/10
@@ -187,6 +188,7 @@ function draw() {
         debugCorner()
         cam.endHUD()
     }
+
 }
 
 
@@ -197,8 +199,45 @@ function debugCorner() {
     noStroke()
     text(`speechStarted: ${dialogBox.speechStarted(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2)}`, 0, height)
     text(`speechEnded: ${dialogBox.speechEnded(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2)}`, 0, height - lineHeight)
-    text(`milliseconds: ${millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]}`, 0, height-2*lineHeight)
+    text(`frameRate: ${frameRate()}`, 0, height-2*lineHeight)
     text(`Adam speaking?: ${dialogBox.speechStarted(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2) && !dialogBox.speechEnded(millis() - voiceStartMillis + 2*jumpMillis - msStartTimestamps[0]*2)}`, 0, height - 3*lineHeight)
+}
+
+
+// draw the 12 outer toruses.
+function drawOuterToruses() {
+    // we're going to do a lot of translations.
+    push()
+    // rotateX(PI/2)
+    for (let i = 0; i < 12; i++) {
+        // For each one (we don't edit this one with the other ones, so we
+        // push() and pop() and find the angle and draw 2 rectangular prisms
+        // and a rectangle.
+        push()
+        let angle = i/12 * 360
+        translate(cos(radians(angle))*110, sin(radians(angle))*110)
+        noStroke()
+        fill(210, 100, 20)
+        noStroke()
+        push()
+        rotateZ(new p5.Vector(cos(radians(angle+90)), sin(radians(angle+90))).heading())
+        rotateY(PI/4)
+        cylinder(7, 20, 5, 24, true, true)
+        pop()
+        translate(cos(radians(angle))*15, sin(radians(angle))*15)
+        push()
+        rotateZ(new p5.Vector(cos(radians(angle+90)), sin(radians(angle+90))).heading())
+        push()
+        rotateY(PI/4)
+        cylinder(10, 7, 5, 24, true, true)
+        pop()
+        fill(0, 0, 100)
+        translate(0, 4, -7.5)
+        rect(-3, -5, 6, 4)
+        pop()
+        pop()
+    }
+    pop()
 }
 
 
