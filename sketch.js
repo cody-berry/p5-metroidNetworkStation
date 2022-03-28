@@ -127,6 +127,7 @@ function setup() {
     p5amp = new p5.Amplitude(0)
 
     // now we rotate the camera to make sure we're in the correct place for Adam
+    cam.rotateZ(-PI/25)
     cam.rotateX(-PI/2)
 
     // let's setup our globe
@@ -208,7 +209,8 @@ function debugCorner() {
 function drawOuterToruses() {
     // we're going to do a lot of translations.
     push()
-    // rotateX(PI/2)
+    rotateX(PI/2)
+
     for (let i = 0; i < 12; i++) {
         // For each one (we don't edit this one with the other ones, so we
         // push() and pop() and find the angle and draw 2 rectangular prisms
@@ -221,19 +223,21 @@ function drawOuterToruses() {
         noStroke()
         push()
         rotateZ(new p5.Vector(cos(radians(angle+90)), sin(radians(angle+90))).heading())
-        rotateY(PI/4)
-        cylinder(7, 20, 5, 24, true, true)
+        push()
+        rotateZ(PI/2)
+        cylinder(10, 15, 36, 24)
+        pop()
         pop()
         translate(cos(radians(angle))*15, sin(radians(angle))*15)
         push()
         rotateZ(new p5.Vector(cos(radians(angle+90)), sin(radians(angle+90))).heading())
         push()
         rotateY(PI/4)
-        cylinder(10, 7, 5, 24, true, true)
+        cylinder(17, 10, 5, 24, true, true)
         pop()
         fill(0, 0, 100)
-        translate(0, 4, -7.5)
-        rect(-3, -5, 6, 4)
+        translate(0, 2, -12.5)
+        rect(-4, -4, 7, 4)
         pop()
         pop()
     }
